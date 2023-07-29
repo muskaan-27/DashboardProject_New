@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Plant Setup Optimization</title>
+    <!-- Add Chart.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Enter Demand Data:</h1>
+    <form id="demandForm">
+        <label for="USA">USA:</label>
+        <input type="number" id="USA" name="USA" value="2800000"><br>
+
+        <label for="GERMANY">GERMANY:</label>
+        <input type="number" id="GERMANY" name="GERMANY" value="90000"><br>
+
+        <label for="JAPAN">JAPAN:</label>
+        <input type="number" id="JAPAN" name="JAPAN" value="1700000"><br>
+
+        <label for="BRAZIL">BRAZIL:</label>
+        <input type="number" id="BRAZIL" name="BRAZIL" value="145000"><br>
+
+        <label for="INDIA">INDIA:</label>
+        <input type="number" id="INDIA" name="INDIA" value="160000"><br>
+
+        <button type="button" onclick="optimizePlantSetup()">Submit</button>
+    </form> 
+
+    <div id="resultContainer" style="display: none;">
+        <h2>Plant Setup Results:</h2>
+        <table>
+            <tr>
+                <th>Country</th>
+                <th>Plant Opening</th>
+            </tr>
+            <tbody id="resultTableBody">
+            </tbody>
+        </table>
+
+        <div id="graphContainer">
+            <!-- Placeholder for the bar graph -->
+            <canvas id="plantOpeningChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+
+    <div id="dfDemandContainer" style="display: none;">
+        <h2>Scenario-wise Demand Data:</h2>
+        <table>
+            <tr>
+                <th>Scenario</th>
+                <th>USA</th>
+                <th>GERMANY</th>
+                <th>JAPAN</th>
+                <th>BRAZIL</th>
+                <th>INDIA</th>
+            </tr>
+            <tbody id="dfDemandTableBody">
+            </tbody>
+        </table>
+
+        <!-- Add the canvas for the line graphs -->
+        <canvas id="lineGraphUSA" width="300" height="100"></canvas>
+        <canvas id="lineGraphGermany" width="300" height="100"></canvas>
+        <canvas id="lineGraphJAPAN" width="300" height="100"></canvas>
+        <canvas id="lineGraphBRAZIL" width="300" height="100"></canvas>
+        <canvas id="lineGraphINDIA" width="300" height="100"></canvas>
+    </div>
+
+    <!-- Include the JavaScript file for the line graphs -->
+    <script src="{{ url_for('static', filename='df_demand_line_graphs.js') }}"></script>
+    <script src="{{ url_for('static', filename='display_Df_Demand_Table.js') }}"></script>
+    <script src="{{ url_for('static', filename='create_Initial_Bar_Graph.js') }}"></script>
+    <script src="{{ url_for('static', filename='display_Initial_Result_Table.js') }}"></script>
+    <script>
+        // Flag to check if demand data has been loaded
+        var demandDataLoaded = false;
+
+        function optimizePlantSetup() {
+            var data = {
+                USA: parseFloat(document.getElementById("USA").value),
+                GERMANY: parseFloat(document.getElementById("GERMANY").value),
+                JAPAN: parseFloat(document.getElementById("JAPAN").value),
+                BRAZIL: parseFloat(document.getElementById("BRAZIL").value),
+                INDIA: parseFloat(document.getElementById("INDIA").value)
+            };
+
+            fetch('/optimize_plant_setup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                // Display the table with plant opening data
+                displayResultTable(result.plants_data);
+                createBarGraph(result.plants_data);
+
+                // Show the result container
+                document.getElementById("resultContainer").style.display = "block";
+
+                // Fetch demand data and display the df_demand_table
+                fetch('/generate_df_demand_data', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(result => {
+                    // Display the df_demand_table
+                    displayDfDemandTable(result.df_demand_table);
+
+                    // Show the dfDemandContainer
+                    document.getElementById("dfDemandContainer").style.display = "block";
+
+                    // Call the function to create line graphs from df_demand_line_graphs.js
+                    createLineGraphs(result.df_demand_table);
+                })
+                .catch(error => console.error('Error:', error));
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+       
+    </script>
+</body>
+</html>
